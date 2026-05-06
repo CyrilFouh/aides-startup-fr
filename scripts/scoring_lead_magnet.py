@@ -20,6 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from load_data import AIDES_AUTOMATIQUES, load_catalogue  # noqa: E402
+from cumul_rules import filtrer_par_familles, famille_de, aides_alternatives  # noqa: E402
 
 
 # ===== Grille de cohérence taille / ticket (cf. references/coherence_taille_montant.md) =====
@@ -420,19 +421,36 @@ def build_top5(p: Profile, catalogue: list[dict] | None = None) -> tuple[list[di
 
     scored.sort(key=lambda x: -x[0])
 
-    # Dédupliquer
-    top_aides = [a for _, a, _ in scored[:30]]
-    top_aides = deduplicate_by_dispositif(top_aides)
+    # Dédupliquer par signature de nom (déclinaisons régionales)
+    seen_names = {}
+    scored_dedup = []
+    for s, a, dbg in scored[:60]:
+        sig = re.sub(r"[^a-z0-9 ]", "", a["nom"].lower())
+        sig = " ".join(sig.split()[:4])
+        if sig not in seen_names:
+            seen_names[sig] = True
+            scored_dedup.append((s, a))
 
-    # Ajouter aides automatiques
-    top_aides = add_automatic_aides(p, top_aides)
+    # Appliquer les règles de cumul/exclusion (familles BPI mutuellement exclusives)
+    # On garde au plus 1 aide par famille (sauf diags & crédits d'impôt: 2)
+    deduped = filtrer_par_familles(scored_dedup)
 
-    # On veut un mix : 1-2 automatiques, 1-2 gros tickets, 1-2 quick wins
+    # Ajouter aides automatiques (CIR, JEI, CII, ACRE) si applicables
+    top_aides = add_automatic_aides(p, deduped)
+
+    # Re-passer le filtre familles après ajout des aides automatiques
+    # (un CIR ajouté ne doit pas concurrencer un crédit d'impôt déjà sélectionné)
+    top_aides_with_score = [(0, a) for a in top_aides]
+    top_aides = filtrer_par_familles(top_aides_with_score)
+
+    # Mix : aides automatiques en tête, puis catalogue
     auto = [a for a in top_aides if a.get("automatique")][:2]
-    non_auto = [a for a in top_aides if not a.get("automatique")][:8]
-    # Garantir au moins 2 aides automatiques (CIR + JEI) et 3 du catalogue
+    non_auto = [a for a in top_aides if not a.get("automatique")][:6]
     top5 = (auto + non_auto)[:5]
-    deuxieme = non_auto[len(top5) - len(auto):][:5]
+
+    # Deuxième cercle : autres aides du catalogue (pas dans le top 5)
+    top5_noms = {a["nom"] for a in top5}
+    deuxieme = [a for a in non_auto if a["nom"] not in top5_noms][:3]
 
     return top5, deuxieme
 
