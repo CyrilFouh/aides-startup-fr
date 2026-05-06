@@ -196,12 +196,14 @@ sécurisation JEI/CIR, optimisation des cumuls.
 | `references/coherence_taille_montant.md` | Grille pour ranker selon taille/ticket |
 | `references/fiches_aides_france2030_bpi.md` | Fiches enrichies des 6 dispositifs gros tickets |
 | `references/fiches_aides_fiscales.md` | Fiches CIR, CII, JEI, JEC, JEII, CICo, Diags |
-| `scripts/load_data.py` | Chargement du catalogue ouvert |
-| `scripts/scoring_lead_magnet.py` | Filtrage + scoring + top 5 |
-| `scripts/generer_export.py` | Génération du markdown d'export |
-| `assets/export_template.md` | Template de l'export pour le client |
-| `assets/cta_reki.md` | Bloc CTA standardisé |
-| `data/catalogue_compact.json` | Sous-ensemble du catalogue (~400 aides crédibles) |
+| `scripts/load_data.py` | Chargement du catalogue + aides automatiques (CIR, JEI…) |
+| `scripts/cumul_rules.py` | Règles d'exclusion mutuelle entre aides non cumulables |
+| `scripts/scoring_lead_magnet.py` | Filtrage + scoring + top 5 (avec dédup par famille) |
+| `scripts/generer_export.py` | Génération du rapport markdown |
+| `scripts/generer_pdf.py` | Génération du PDF avec charte graphique Reki (WeasyPrint) |
+| `assets/export_template.md` | Template de l'export markdown |
+| `assets/cta_reki.md` | Bloc CTA Reki standardisé |
+| `data/catalogue_compact.json` | Sous-ensemble du catalogue (~1 700 aides crédibles) |
 
 ## Bonnes pratiques de conversation
 
