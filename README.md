@@ -2,8 +2,8 @@
 
 > **Diagnostic personnalisé en 5 minutes** des aides publiques françaises (subventions, prêts, crédits d'impôt, France 2030, BPI, JEI, CIR…) auxquelles votre entreprise est éligible. Skill Claude prêt à installer en drag-and-drop.
 
-[![Version](https://img.shields.io/github/v/release/REPLACE_USERNAME/aides-startup-fr-by-reki?label=version)](https://github.com/REPLACE_USERNAME/aides-startup-fr-by-reki/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/REPLACE_USERNAME/aides-startup-fr-by-reki/total)](https://github.com/REPLACE_USERNAME/aides-startup-fr-by-reki/releases)
+[![Version](https://img.shields.io/github/v/release/CyrilFouh/aides-startup-fr-by-reki?label=version)](https://github.com/CyrilFouh/aides-startup-fr-by-reki/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/CyrilFouh/aides-startup-fr-by-reki/total)](https://github.com/CyrilFouh/aides-startup-fr-by-reki/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Made by Reki](https://img.shields.io/badge/made%20by-Reki-ff5a5f)](https://www.reki.eu)
 
@@ -28,7 +28,7 @@ En 10 questions ciblées, ce skill vous donne :
 
 1. **Télécharger le skill** : cliquez sur le bouton ci-dessous, le fichier `aides-startup-fr-by-reki.skill` se télécharge.
 
-   👉 **[Télécharger la dernière version](https://github.com/REPLACE_USERNAME/aides-startup-fr-by-reki/releases/latest/download/aides-startup-fr-by-reki.skill)**
+   👉 **[Télécharger la dernière version](https://github.com/CyrilFouh/aides-startup-fr-by-reki/releases/latest/download/aides-startup-fr-by-reki.skill)**
 
 2. **Glisser-déposer** le fichier `.skill` dans la fenêtre de Claude (claude.ai ou app desktop Cowork). Claude affiche un bouton **"Installer ce skill"** : cliquez.
 
@@ -117,7 +117,7 @@ aides-startup-fr-by-reki/
 ### Modifier le skill localement
 
 ```bash
-git clone https://github.com/REPLACE_USERNAME/aides-startup-fr-by-reki.git
+git clone https://github.com/CyrilFouh/aides-startup-fr-by-reki.git
 cd aides-startup-fr-by-reki
 # Éditer les fichiers (SKILL.md, scripts/, references/, etc.)
 ./make_skill.sh   # repackage en aides-startup-fr-by-reki.skill
