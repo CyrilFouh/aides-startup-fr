@@ -117,14 +117,44 @@ Puis le **plan d'action 90 jours** (3-5 actions ordonnées, datées) et le
 
 ## Génération de l'export
 
-Appeler `scripts/generer_export.py` (ou rédiger directement le markdown si
-Python n'est pas disponible) en utilisant `assets/export_template.md`
-comme squelette. Le fichier doit être **sauvegardé dans le dossier de
-travail de l'utilisateur** (par défaut son Downloads, ou le dossier qu'il
-a sélectionné) avec un nom du type :
-`Reki_diagnostic_aides_<nom_entreprise>_<date>.md`.
+**Deux formats sont produits** :
 
-Présenter le fichier à l'utilisateur via un lien `computer://`.
+1. **Markdown** (`scripts/generer_export.py`) — pour modification rapide
+   et partage en email/Slack/Notion
+2. **PDF avec charte Reki** (`scripts/generer_pdf.py`) — livrable
+   professionnel à joindre lors de la prise de RDV
+
+Les deux fichiers doivent être **sauvegardés dans le dossier de travail
+de l'utilisateur** (par défaut son Downloads, ou le dossier qu'il a
+sélectionné) avec un nom du type :
+- `Reki_diagnostic_aides_<nom>_<date>.md`
+- `Reki_diagnostic_aides_<nom>_<date>.pdf`
+
+Le PDF utilise WeasyPrint (`pip install weasyprint`) pour rendre du HTML+CSS
+en PDF avec la charte graphique Reki (jaune doré #E8C44E, badges colorés,
+sections numérotées, footer "Reki — Conseil en financement non dilutif").
+
+Présenter les deux fichiers à l'utilisateur via des liens `computer://`.
+
+## Logique de cumul/exclusion
+
+**Critique pour la crédibilité** : ne JAMAIS proposer plusieurs aides
+Bpifrance qui financent la même phase de R&D (API, Avance Innovation, Prêt
+Innovation R&D) — elles ne sont pas cumulables sur les mêmes dépenses. Le
+script `scripts/cumul_rules.py` regroupe les aides en familles
+mutuellement exclusives :
+
+- `bpi_innovation_pre_industriel` : API / Avance Innovation / Prêt Innovation R&D
+- `bpi_bourses_creation` : BFT / BFTE
+- `bpi_diags` : Diag Décarbon'Action / IA / Cyber / Adaptation / Biodiversité
+- `france_2030_aap_general` : Projets d'Innovation / i-Démo / etc.
+- `credits_impot` : CIR / CII / CICo
+- `statuts_jei` : JEI / JEC / JEII
+- `prets_honneur`
+
+Le top 5 retient au plus 1 aide par famille (sauf diags et crédits d'impôt
+qui peuvent être 2). Les autres sont mentionnées en "alternatives à
+considérer si la principale est rejetée".
 
 ## CTA Reki — la sortie commerciale
 
