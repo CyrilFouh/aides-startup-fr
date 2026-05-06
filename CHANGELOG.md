@@ -5,6 +5,27 @@ Toutes les modifications notables de ce skill sont documentées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Versionnement [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [1.1.0] — 2026-05-06
+
+### Ajouté
+- Génération de PDF avec charte graphique Reki (jaune doré, sections
+  numérotées, badges Automatique vert pour CIR/JEI, bandeau ⚠️ Règle de
+  cumul) via WeasyPrint
+- Logique de cumul/exclusion entre aides Bpifrance (familles mutuellement
+  exclusives : API / Avance Innovation / Prêt Innovation R&D ne sont plus
+  proposées ensemble)
+- Section "Aides alternatives" qui mentionne les autres aides de la même
+  famille à considérer si la principale est rejetée
+
+### Modifié
+- Export markdown raccourci (~25 % plus court) avec format tableau condensé
+  par aide pour une lecture plus opérationnelle
+- Plan d'action 90 jours en tableau (Quand / Action / Dispositif / Effort)
+
+### Corrigé
+- Plus de double-comptage de potentiel total quand plusieurs aides
+  Bpifrance non-cumulables apparaissaient dans le même top 5
+
 ## [1.0.0] — 2026-05-06
 
 ### Ajouté
