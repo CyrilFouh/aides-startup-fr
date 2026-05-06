@@ -102,7 +102,7 @@ aides-startup-fr-by-reki/
 
 ## 🤝 À propos de Reki
 
-[Reki](https://www.reki.eu) accompagne startups et PME pour aller chercher **100 k€ à 5 M€ de financement non-dilutif** : montage de dossiers Bpifrance et France 2030, sécurisation JEI/CIR, optimisation des cumuls de minimis et RGEC.
+[Reki](https://www.reki.eu) accompagne startups et PME pour aller chercher **10 k€ à 10 M€ de financement non-dilutif** : montage de dossiers Bpifrance et France 2030, sécurisation JEI/CIR, optimisation des cumuls de minimis et RGEC.
 
 > Ce skill est un *lead magnet* : on vous donne un diagnostic gratuit et fiable pour vous montrer ce qu'on sait faire. Si vous voulez ensuite déléguer le montage des dossiers, nous travaillons majoritairement en **success fee** — pas d'aide obtenue, pas (ou peu) de facture.
 
