@@ -65,35 +65,26 @@ def fmt_ticket(a):
 
 
 def render_aide(a, idx, p):
-    """Rend une aide en markdown."""
+    """Rend une aide en markdown — version condensée et opérationnelle."""
     auto = a.get("automatique", False)
-    tag = " *(automatique, à activer immédiatement)*" if auto else ""
+    tag_auto = " 🟢 *automatique*" if auto else ""
 
     pourquoi = compute_pourquoi(a, p)
     montant = fmt_ticket(a)
-    timeline = a.get("timeline") or guess_timeline(a)
-    selectivite = a.get("selectivite") or guess_selectivite(a)
+    timeline = (a.get("timeline") or guess_timeline(a)).split("(")[0].strip()
     tip = a.get("tip") or guess_tip(a)
-    lien = a.get("lien") or "(à rechercher sur bpifrance.fr ou aides-entreprises.fr)"
+    lien = a.get("lien") or "—"
 
-    # critères clés courts
-    crit = ""
-    if a.get("objet"):
-        crit = a["objet"][:200]
-    elif a.get("conditions"):
-        crit = a["conditions"][:200]
-    if not crit:
-        crit = ", ".join(a.get("natures", [])[:3])
+    # Tableau condensé en 2 lignes
+    return f"""### {idx}. {a['nom']}{tag_auto}
 
-    return f"""### {idx}. {a['nom']} — {montant}{tag}
+> **{pourquoi}**
 
-**Pourquoi pour vous** : {pourquoi}
-**Critères clés** : {crit}
-**Montant attendu pour votre profil** : {dimension_montant(a, p)}
-**Timeline** : {timeline}
-**Sélectivité estimée** : {selectivite}
-**Tip Reki** : {tip}
-**Lien** : {lien}
+| Ticket attendu | Timeline | Tip Reki |
+|---|---|---|
+| {dimension_montant(a, p)} | {timeline} | {tip[:120]} |
+
+[→ Fiche officielle]({lien})
 """
 
 
@@ -273,60 +264,41 @@ def render_export(p: Profile, top5: list[dict], deuxieme: list[dict]) -> str:
     secteurs_str = ", ".join(p.secteurs) or "PME tous secteurs"
     projets_str = ", ".join(p.projets) or "(non précisé)"
 
-    return f"""# Diagnostic d'éligibilité aux aides publiques
+    return f"""# Diagnostic aides publiques — {p.nom_entreprise}
 
-**Entreprise** : {p.nom_entreprise}
-**Date du diagnostic** : {today}
-**Profil** : {STADE_LABEL.get(p.stade, p.stade)} • {EFFECTIF_LABEL.get(p.effectif, p.effectif)} • {p.region} • {secteurs_str}
+> **{STADE_LABEL.get(p.stade, p.stade)}** • {EFFECTIF_LABEL.get(p.effectif, p.effectif)} • {p.region} • {secteurs_str} — {today}
 
----
+## 🎯 Synthèse
 
-## Synthèse
+**Potentiel total réaliste sur 18 mois** : **{fmt_eur(total_min)} à {fmt_eur(total_max)}** d'aides cumulées *(équivalent {equiv_levee})*.
 
-Sur la base de vos réponses, vous pouvez réaliste viser **{fmt_eur(total_min)} à {fmt_eur(total_max)} d'aides cumulées sur 18 mois**, soit l'équivalent d'une {equiv_levee}.
+**Priorités** : {top_priorities}
 
-**Top priorités** : {top_priorities}
-
-**Plus gros risque** : {risque_principal}
+**À surveiller** : {risque_principal}
 
 ---
 
-## Profil de votre entreprise *(récapitulatif des 10 réponses)*
-
-| Élément | Réponse |
-|---|---|
-| Type de projet | {projets_str} |
-| Domaine principal | {p.domaine} |
-| Stade de financement | {STADE_LABEL.get(p.stade, p.stade)} |
-| Nature d'aide souhaitée | {nature_str} |
-| Secteur d'activité | {secteurs_str} |
-| Effectif | {EFFECTIF_LABEL.get(p.effectif, p.effectif)} |
-| Région du siège | {p.region} |
-| Dimension export | {"Oui" if p.export else "Non"} |
-| R&D / innovation | {"R&D pure (Frascati)" if p.rd_pure else ("Innovation (design, intégration)" if p.innovation else "Non")} |
-| Cash dispo cofinancement | {fmt_eur(p.cofi_max)} |
-
----
-
-## Top {len(top5)} des aides les plus crédibles pour vous
+## 📋 Top 5 des aides crédibles
 
 {aides_md}
 
+> ⚠️ **Cumul** : les aides Bpifrance pré-industrielles (Aide à l'Innovation, Avance Innovation, Prêt Innovation R&D) **ne se cumulent pas** sur les mêmes dépenses. Le top 5 retient la plus pertinente pour votre profil. Les autres existent et sont mentionnées en deuxième cercle.
+
 ---
 
-## Plan d'action 90 jours
+## 🗓️ Plan d'action 90 jours
 
 {plan}
 
 ---
 
-## Deuxième cercle *(aides à creuser dans un second temps)*
+## 🔄 Aides alternatives *(même famille — si la principale est rejetée)*
 
 {deux_md}
 
 ---
 
-## Pièges à éviter pour votre profil
+## ⚠️ Pièges à éviter
 
 {pieges}
 
