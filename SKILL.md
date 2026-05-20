@@ -1,6 +1,6 @@
 ---
 name: aides-startup-fr
-version: 1.2.0
+version: 1.3.0
 license: MIT
 homepage: https://github.com/CyrilFouh/aides-startup-fr
 authors:
@@ -164,18 +164,25 @@ l'engagement.
 ### Vague 2 — entreprise *(à poser ensemble)*
 
 ```
-**Q5. Secteur principal de l'entreprise ? (cochez plusieurs si pertinent)**
-1. PME tous secteurs (par défaut)
-2. Industrie
-3. Artisanat (Bâtiment / Fabrication / Alimentation / Services)
-4. Commerce de proximité
-5. Hôtellerie - Restauration - Tourisme
-6. Culture - Médias
-7. Agro-alimentaire
-8. ESS / Coopérative / Association
-9. Métiers d'art
-10. Autres services / Professions libérales
-11. ETI / Grande entreprise
+**Q5. Votre activité relève-t-elle d'un de ces secteurs spécifiques ?**
+1. Non — activité généraliste (SaaS, services, tech, conseil, industrie classique, deeptech…)
+2. Métiers d'art / artisanat d'art
+3. Agriculture / pêche / sylviculture / viticulture
+4. Économie Sociale et Solidaire (ESS) / coopérative / association
+5. Hôtellerie / restauration / tourisme
+6. Culture / médias / production audiovisuelle / cinéma
+7. Agroalimentaire (transformation industrielle)
+
+👉 Répondez avec le numéro. La plupart des startups tech et PME industrielles
+choisissent 1. Ne cochez 2-7 que si votre cœur d'activité est réellement
+dans ce secteur — sinon le filtre vous écartera de plein d'aides non
+sectorielles.
+
+> Le mapping `Q5_TO_SECTEUR_TAG` dans `scripts/scoring_lead_magnet.py`
+> traduit la réponse en tags `secteurs_exclusifs` que le scoring utilise
+> pour pénaliser les aides hors-secteur (-20 au score). Une startup SaaS
+> IA qui répond "1" ne verra donc PAS remonter « Plan métiers d'art à
+> l'export » dans son top 5.
 
 **Q6. Combien de salariés ?**
 1. 0 (créateur, indépendant)
