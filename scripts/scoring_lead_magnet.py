@@ -23,6 +23,39 @@ from load_data import AIDES_AUTOMATIQUES, load_catalogue  # noqa: E402
 from cumul_rules import filtrer_par_familles, famille_de, aides_alternatives  # noqa: E402
 
 
+# ===== Mapping Q2 (UX) -> id_domaine (catalogue) =====
+# La numérotation présentée à l'utilisateur dans le SKILL.md (Q2) ne correspond
+# PAS à `id_domaine` dans `data/catalogue_compact.json`. Sans ce mapping, un
+# user qui choisit "Innovation" interroge le code domaine "2" qui contient en
+# réalité les aides Export — d'où des faux positifs type "Plan métiers d'art
+# à l'export" / "Accélérateur Asie" qui remontent à la place des vraies aides
+# innovation. Validé par audit de la distribution des id_domaine du catalogue.
+Q2_TO_CATALOG_DOMAIN = {
+    "1": "1",   # Économie générale
+    "2": "4",   # Innovation (Avance Innovation, Prêt Innovation R&D, deeptech, Pionniers IA, BFT, BFTE…)
+    "3": "15",  # Développement durable
+    "4": "6",   # Culture (crédits d'impôt cinéma, jeux vidéo, audiovisuel…)
+    "5": "3",   # Tourisme
+    "6": "2",   # International / Export
+    "7": "7",   # Agroalimentaire
+}
+
+
+# ===== Mapping Q5 (secteurs exclusifs) =====
+# Le tag éventuellement présent dans le profil utilisateur, pour pouvoir
+# filtrer les aides trop ciblées (Métiers d'art, Agriculture, ESS, Culture…)
+# qui ne sont pas pertinentes pour un user "généraliste".
+Q5_TO_SECTEUR_TAG = {
+    "1": [],                        # Activité généraliste (par défaut)
+    "2": ["metiers_art"],
+    "3": ["agri"],
+    "4": ["ess"],
+    "5": ["tourisme"],
+    "6": ["culture"],
+    "7": ["agro"],
+}
+
+
 # ===== Grille de cohérence taille / ticket (cf. references/coherence_taille_montant.md) =====
 
 GRILLE_TICKET = {
@@ -113,6 +146,10 @@ class Profile:
     stade: str = "seed"  # preseed, seed, serieA, serieB, bootstrap, pme, pme_grand, eti
     natures: set[str] = field(default_factory=set)
     secteurs: set[str] = field(default_factory=set)
+    # secteurs_exclusifs : tags discriminants (metiers_art, agri, ess,
+    # tourisme, culture, agro). Vide pour une activité généraliste. Sert
+    # à filtrer les aides explicitement réservées à un secteur de niche.
+    secteurs_exclusifs: set[str] = field(default_factory=set)
     effectif: str = "2"  # '1' à '6'
     region: str = "France"
     export: bool = False
@@ -126,6 +163,46 @@ class Profile:
     def stade_grille(self) -> tuple[int, int, int, int, int]:
         return GRILLE_TICKET.get(self.stade, GRILLE_TICKET["seed"])
 
+    @classmethod
+    def from_raw(cls, raw: dict) -> "Profile":
+        """Construit un Profile depuis un dict de réponses utilisateur.
+
+        Applique automatiquement les mappings Q2 (domaine) et Q5
+        (secteurs_exclusifs) entre la numérotation UX du SKILL.md et les
+        codes internes utilisés par le catalogue.
+        """
+        # Mapping Q2 UX -> id_domaine catalogue
+        q2 = str(raw.get("domaine", "1"))
+        domaine = Q2_TO_CATALOG_DOMAIN.get(q2, q2)
+
+        # Mapping Q5 (secteurs exclusifs), si fourni
+        q5 = raw.get("secteur_exclusif")  # peut être string ('1'..'7'), liste, ou None
+        if isinstance(q5, str):
+            secteurs_exclusifs = set(Q5_TO_SECTEUR_TAG.get(q5, []))
+        elif isinstance(q5, list):
+            secteurs_exclusifs = set()
+            for k in q5:
+                secteurs_exclusifs.update(Q5_TO_SECTEUR_TAG.get(str(k), []))
+        else:
+            secteurs_exclusifs = set(raw.get("secteurs_exclusifs", []))
+
+        return cls(
+            projets=set(raw.get("projets", [])),
+            domaine=domaine,
+            stade=raw.get("stade", "seed"),
+            natures=set(raw.get("natures", [])),
+            secteurs=set(raw.get("secteurs", [])),
+            secteurs_exclusifs=secteurs_exclusifs,
+            effectif=raw.get("effectif", "2"),
+            region=raw.get("region", "France"),
+            export=raw.get("export", False),
+            innovation=raw.get("innovation", False),
+            rd_pure=raw.get("rd_pure", False),
+            cofi_max=raw.get("cofi_max", 100_000),
+            nom_entreprise=raw.get("nom_entreprise", "Votre entreprise"),
+            age_annees=raw.get("age_annees"),
+        )
+
 
 # ===== Filtrage =====
 
@@ -137,8 +214,11 @@ def aide_passes_filter(aide: dict, p: Profile) -> bool:
 
     # Domaine : on accepte si match OU si domaine non spécifié
     if p.domaine and aide.get("id_domaine") and aide["id_domaine"] != p.domaine:
-        # tolérance : si projet innovation, on accepte aussi domaine 1 (Eco)
-        if not (p.innovation and aide["id_domaine"] == "1"):
+        # tolérance : si projet innovation, on accepte aussi les domaines
+        # fourre-tout ('1' Économie générale, '0' indéterminé) qui peuvent
+        # contenir des dispositifs transversaux utiles (Diags, France 2030
+        # Cyber PME, etc.)
+        if not (p.innovation and aide["id_domaine"] in ("1", "0")):
             return False
 
     # Effectif
@@ -311,6 +391,50 @@ def score_aide(aide: dict, p: Profile) -> tuple[float, dict]:
     if any(z in nom_lower for z in fiscal_zonage) and not p.export:
         score -= 5
 
+    # 11. Pénalité forte si l'aide cible un secteur exclusif que l'utilisateur
+    # n'a pas coché. Sans ce garde-fou, une startup SaaS IA voit remonter
+    # « Plan métiers d'art à l'export » ou « Aide à l'installation des
+    # exploitants viticoles » dans son top 5. Le mapping est sur le NOM
+    # de l'aide (et non sur le tag profil, qui est trop laxiste : la plupart
+    # des aides niche ont aussi le tag "PME tous secteurs").
+    SECTEUR_KEYWORDS = {
+        # mot-clé dans nom_lower : tag exclusif attendu côté p.secteurs_exclusifs
+        "métiers d'art": "metiers_art",
+        "métiers d’art": "metiers_art",
+        "agricole": "agri",
+        "agricoles": "agri",
+        "viticult": "agri",
+        "vitivinic": "agri",
+        "élevage": "agri",
+        "scieries": "agri",
+        "pêche": "agri",
+        "sylvicult": "agri",
+        "horticult": "agri",
+        "audiovisuel": "culture",
+        "audiovisuelle": "culture",
+        "cinéma": "culture",
+        "cinémas": "culture",
+        "cinématograph": "culture",
+        "phonograph": "culture",
+        "économie sociale et solidaire": "ess",
+        "scop": "ess",
+        "scic": "ess",
+        "coopérative": "ess",
+        "tourisme": "tourisme",
+        "hôtelier": "tourisme",
+        "hôtelière": "tourisme",
+        "hôtellerie": "tourisme",
+        "hébergement touristique": "tourisme",
+        "agroalimentaire": "agro",
+        "agro-alimentaire": "agro",
+        "industrie agroalimentaire": "agro",
+    }
+    for kw, tag in SECTEUR_KEYWORDS.items():
+        if kw in nom_lower and tag not in p.secteurs_exclusifs:
+            score -= 20  # rejet quasi-certain en pratique
+            debug["secteur_exclusif_non_matche"] = tag
+            break
+
     return score, debug
 
 
@@ -357,8 +481,10 @@ def add_automatic_aides(p: Profile, top: list[dict]) -> list[dict]:
                 "automatique": True,
             })
 
-    # CII
-    if p.innovation and not p.rd_pure and p.effectif in ("1", "2", "3", "4"):
+    # CII — cumul autorisé avec le CIR sur lots de dépenses distincts
+    # (la famille `credits_impot` accepte 2 entrées dans cumul_rules).
+    # On le propose dès que p.innovation est cochée, sans exclure le R&D pur.
+    if p.innovation and p.effectif in ("1", "2", "3", "4"):
         if "crédit d'impôt innovation" not in " ".join(seen_names):
             cii = AIDES_AUTOMATIQUES["CII"]
             out.append({
@@ -463,21 +589,7 @@ def main():
 
     with open(args.profile_json) as f:
         raw = json.load(f)
-    p = Profile(
-        projets=set(raw.get("projets", [])),
-        domaine=raw.get("domaine", "1"),
-        stade=raw.get("stade", "seed"),
-        natures=set(raw.get("natures", [])),
-        secteurs=set(raw.get("secteurs", [])),
-        effectif=raw.get("effectif", "2"),
-        region=raw.get("region", "France"),
-        export=raw.get("export", False),
-        innovation=raw.get("innovation", False),
-        rd_pure=raw.get("rd_pure", False),
-        cofi_max=raw.get("cofi_max", 100_000),
-        nom_entreprise=raw.get("nom_entreprise", "Votre entreprise"),
-        age_annees=raw.get("age_annees"),
-    )
+    p = Profile.from_raw(raw)
     top5, deux = build_top5(p)
     print(f"# Top {len(top5)} aides crédibles\n")
     for i, a in enumerate(top5, 1):
