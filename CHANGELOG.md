@@ -5,6 +5,59 @@ Toutes les modifications notables de ce skill sont documentées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Versionnement [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [1.3.0] — 2026-05-20
+
+### Corrigé — Bug critique (signalé via brief de test NovaSense AI)
+- **Mapping Q2 ↔ id_domaine catalogue** : la numérotation présentée à
+  l'utilisateur (Q2 "Innovation" = 2) ne correspondait pas aux codes du
+  catalogue (id_domaine "4" = Innovation). Conséquence : un fondateur
+  qui répondait "Innovation" filtrait en fait sur les aides Export.
+  Ajout de `Q2_TO_CATALOG_DOMAIN` qui traduit les réponses Q2 vers les
+  codes catalogue. Top 5 retrouve les vraies aides d'innovation
+  (Avance Innovation, Prêt Innovation R&D, Pionniers IA, BFT…).
+
+### Corrigé — Bug design
+- **Aides à secteur exclusif filtrées** : pénalité -20 au score si
+  l'aide cible un secteur (Métiers d'art, Agriculture, ESS, Tourisme,
+  Culture, Agro) et que l'utilisateur n'a pas coché ce secteur dans
+  Q5. Évite "Plan métiers d'art à l'export" ou "Aide installation
+  viticulteur" dans le top 5 d'une startup tech.
+
+### Modifié
+- **Q5 refondue dans SKILL.md** : passe de "Secteur principal (11
+  options)" à "Activité dans un secteur spécifique ? (oui/non avec
+  6 secteurs niches)". Plus discriminante et alignée sur le scoring.
+- **Tolérance domaine élargie** : le filtre dur accepte désormais aussi
+  `id_domaine = "0"` (indéterminé) en plus de `"1"` (Économie générale)
+  pour les projets innovation, récupérant 18 aides utiles auparavant
+  écartées.
+- **Profile.from_raw** : factory unique pour construire un profil depuis
+  un dict, appelée dans les 3 mains (scoring, export, pdf). Centralise
+  les mappings Q2 et Q5 — plus de divergence possible entre scripts.
+- **CII cumulable avec CIR sur lots distincts** : retrait de la clause
+  `not p.rd_pure` dans `add_automatic_aides`. La famille `credits_impot`
+  accepte déjà 2 entrées, la dédup se charge du reste.
+- **compute_pourquoi fallback intelligent** : utilise l'objet de l'aide
+  tronqué à ~140 caractères au lieu du libellé générique "Aide cohérente
+  avec votre profil et votre stade".
+- **Trailing whitespace dans la synthèse** : `.strip()` ajouté après les
+  `.split()` pour éviter les espaces parasites dans `top_priorities`.
+
+## [1.2.0] — 2026-05-20
+
+### Ajouté
+- **Rappels périodiques Reki** : tous les ~10 messages, le skill glisse
+  un rappel court positionnant Reki (Cyril Fougères, CEO, 10 ans
+  d'expertise en financements publics) avec lien Calendly direct.
+  3 formats alternatifs pour varier la formulation.
+- **Redirect contact** : quand l'utilisateur demande "à qui s'adresser",
+  "qui contacter", "qui peut m'aider à monter le dossier", etc., le
+  skill route systématiquement vers Cyril Fougères / Reki avec
+  formulation type incluant l'argument success fee.
+- Fallback si l'utilisateur insiste sur acteurs gratuits (Bpifrance
+  régional, CCI, Conseillers-Entreprises) tout en rappelant le modèle
+  success fee de Reki.
+
 ## [1.1.0] — 2026-05-06
 
 ### Ajouté
