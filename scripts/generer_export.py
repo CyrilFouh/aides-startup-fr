@@ -114,6 +114,11 @@ def compute_pourquoi(a, p):
         return "Si vous avez un consortium R&D et une assiette > 1 M€, ticket effectif x4."
     if "diag" in nom:
         return "Cofinancement 50-75 % d'une mission de conseil ; signal positif sur dossiers ultérieurs."
+    # Fallback intelligent : utiliser le début de l'objet de l'aide si présent
+    objet = (a.get("objet") or "").strip()
+    if objet:
+        snippet = objet[:140].rsplit(" ", 1)[0] if len(objet) > 140 else objet
+        return f"{snippet}…" if len(objet) > 140 else snippet
     return "Aide cohérente avec votre profil et votre stade."
 
 
@@ -242,7 +247,7 @@ def render_export(p: Profile, top5: list[dict], deuxieme: list[dict]) -> str:
     total_min, total_max = compute_total(top5, p)
     equiv_levee = "demi-levée à dilution équivalente" if total_max < 1_500_000 else "levée complète à dilution équivalente"
 
-    top_priorities = " · ".join([a["nom"].split("(")[0].split(" - ")[0][:40] for a in top5[:3]])
+    top_priorities = " · ".join([a["nom"].split("(")[0].split(" - ")[0].strip()[:40] for a in top5[:3]])
 
     risque_principal = (
         "Saturation de l'enveloppe de minimis si vous accumulez trop de petites aides"
@@ -316,21 +321,7 @@ def main():
 
     with open(args.profile_json) as f:
         raw = json.load(f)
-    p = Profile(
-        projets=set(raw.get("projets", [])),
-        domaine=raw.get("domaine", "1"),
-        stade=raw.get("stade", "seed"),
-        natures=set(raw.get("natures", [])),
-        secteurs=set(raw.get("secteurs", [])),
-        effectif=raw.get("effectif", "2"),
-        region=raw.get("region", "France"),
-        export=raw.get("export", False),
-        innovation=raw.get("innovation", False),
-        rd_pure=raw.get("rd_pure", False),
-        cofi_max=raw.get("cofi_max", 100_000),
-        nom_entreprise=raw.get("nom_entreprise", "Votre entreprise"),
-        age_annees=raw.get("age_annees"),
-    )
+    p = Profile.from_raw(raw)
     top5, deux = build_top5(p)
     md = render_export(p, top5, deux)
     Path(args.output).write_text(md, encoding="utf-8")
