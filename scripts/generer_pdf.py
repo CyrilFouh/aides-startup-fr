@@ -744,21 +744,7 @@ def main():
 
     with open(args.profile_json) as f:
         raw = json.load(f)
-    p = Profile(
-        projets=set(raw.get("projets", [])),
-        domaine=raw.get("domaine", "1"),
-        stade=raw.get("stade", "seed"),
-        natures=set(raw.get("natures", [])),
-        secteurs=set(raw.get("secteurs", [])),
-        effectif=raw.get("effectif", "2"),
-        region=raw.get("region", "France"),
-        export=raw.get("export", False),
-        innovation=raw.get("innovation", False),
-        rd_pure=raw.get("rd_pure", False),
-        cofi_max=raw.get("cofi_max", 100_000),
-        nom_entreprise=raw.get("nom_entreprise", "Votre entreprise"),
-        age_annees=raw.get("age_annees"),
-    )
+    p = Profile.from_raw(raw)
     top5, deux = build_top5(p)
     html = render_pdf_html(p, top5, deux)
 
